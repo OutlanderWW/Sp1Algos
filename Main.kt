@@ -13,21 +13,23 @@ import java.io.File
 }*/
 
 fun main() {
-    val img: BufferedImage = ImageIO.read(File("res/img4.jpg"))
-    var data = listOf(img)
+    var data: MutableMap<String, BufferedImage> = mutableMapOf()
     var icc=1
     val basepath = "res/img"
-    for(i in 1..3){
+    for(i in 1..4){
         val path= basepath+i.toString()+".png"
+        val key = "img"+i+".png"
         val imgr: BufferedImage = ImageIO.read(File(path))
-        data=data+imgr
+        data[path]=imgr
     }
     // values can be changed but these are suggested within the article
     val beta = 120
     val gamma = 80
     val delta = 0.04F
 
-    for (i in data){
+    for (entry in data){
+        val i = entry.value
+        val name= entry.key
         val resolution = listOf(i.height, i.width)
         val FSum= Array(resolution[0]){IntArray(resolution[1])}
         for(y in 0 until i.height){
@@ -60,7 +62,7 @@ fun main() {
         val blackVar =blackFSum>delta
         println("max=$maxFsum avg=$avgFSum black=$blackFSum")
         if(maxVar and avgsumVar){
-            saveImage(i, "hit"+icc+".png")
+            saveImage(i, name)
             icc+=1
         }
     }
