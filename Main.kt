@@ -4,23 +4,23 @@ import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 import java.io.File
 
-/*fun saveImage(image: BufferedImage, fileName: String, format: String = "png") {
+fun saveImage(image: BufferedImage, fileName: String, format: String = "png") {
     val folder = File("hits/")
     if (!folder.exists()) folder.mkdirs()
 
     val file = File(folder, fileName)
     ImageIO.write(image, format, file)
-}*/
+}
 
 fun main() {
     var data: MutableMap<String, BufferedImage> = mutableMapOf()
     var icc=1
     val basepath = "res/img"
-    for(i in 1..4){
+    for(i in 1..3){
         val path= basepath+i.toString()+".png"
         val key = "img"+i+".png"
         val imgr: BufferedImage = ImageIO.read(File(path))
-        data[path]=imgr
+        data[key]=imgr
     }
     // values can be changed but these are suggested within the article
     val beta = 120
