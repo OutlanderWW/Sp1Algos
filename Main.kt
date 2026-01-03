@@ -4,13 +4,13 @@ import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 import java.io.File
 
-fun saveImage(image: BufferedImage, fileName: String, format: String = "png") {
+/*fun saveImage(image: BufferedImage, fileName: String, format: String = "png") {
     val folder = File("hits/")
     if (!folder.exists()) folder.mkdirs()
 
     val file = File(folder, fileName)
     ImageIO.write(image, format, file)
-}
+}*/
 
 fun main() {
     val img: BufferedImage = ImageIO.read(File("res/img4.jpg"))
@@ -22,14 +22,13 @@ fun main() {
         val imgr: BufferedImage = ImageIO.read(File(path))
         data=data+imgr
     }
-    data=data.shuffled()
-    var resolution= listOf(1080, 1920)
     // values can be changed but these are suggested within the article
-    val beta = 4
-    val gamma = 120
-    val delta=0.004
+    val beta = 120
+    val gamma = 80
+    val delta = 0.04F
+
     for (i in data){
-        resolution= listOf(i.height,i.height)
+        val resolution = listOf(i.height, i.width)
         val FSum= Array(resolution[0]){IntArray(resolution[1])}
         for(y in 0 until i.height){
             for(x in 0 until i.width){
@@ -37,14 +36,14 @@ fun main() {
                 val r = (rgb ushr 16) and 0xFF
                 val g = (rgb ushr 8) and 0xFF
                 val b = rgb and 0xFF
-                FSum[x][y] = r+g+b
+                FSum[y][x] = r + g + b
             }
         }
         val maxFsum = FSum.maxOf { row -> row.maxOrNull() ?: Int.MIN_VALUE }
         var FZeroesCount:Float = 0.0F
         for(iZ in FSum){
             for(j in iZ){
-                if(j==0) FZeroesCount+=1.0F
+                if(j<=3) FZeroesCount+=1.0F
             }
         }
         var FSumSum:Float= 0.0F
@@ -59,10 +58,10 @@ fun main() {
         val avgsumVar=avgFSum<gamma
         val maxVar=maxFsum>beta
         val blackVar =blackFSum>delta
-        if(maxVar and avgsumVar and blackVar){
+        println("max=$maxFsum avg=$avgFSum black=$blackFSum")
+        if(maxVar and avgsumVar){
             saveImage(i, "hit"+icc+".png")
             icc+=1
         }
-
     }
 }

@@ -17,18 +17,14 @@ fun gaussianKernel(size: Int, sigma: Double): Array<DoubleArray> {
         }
     }
 
-    // normalize kernel
     for (y in 0 until size)
         for (x in 0 until size)
             kernel[y][x] /= sum
 
     return kernel
 }
-fun convolve2D(
-    data: Array<IntArray>,
-    kernel: Array<DoubleArray>
-): Array<DoubleArray> {
 
+fun convolve2D(data: Array<IntArray>, kernel: Array<DoubleArray>): Array<DoubleArray> {
     val h = data.size
     val w = data[0].size
     val k = kernel.size
@@ -39,7 +35,6 @@ fun convolve2D(
     for (y in 0 until h) {
         for (x in 0 until w) {
             var sum = 0.0
-
             for (ky in 0 until k) {
                 for (kx in 0 until k) {
                     val yy = (y + ky - kHalf).coerceIn(0, h - 1)
@@ -47,11 +42,9 @@ fun convolve2D(
                     sum += data[yy][xx] * kernel[ky][kx]
                 }
             }
-
             output[y][x] = sum
         }
     }
-
     return output
 }
 
@@ -68,6 +61,7 @@ fun cropMatrix(
         }
     }
 }
+
 fun saveImage(image: BufferedImage, fileName: String, format: String = "png") {
     val folder = File("hits/")
     if (!folder.exists()) folder.mkdirs()
@@ -75,12 +69,8 @@ fun saveImage(image: BufferedImage, fileName: String, format: String = "png") {
     val file = File(folder, fileName)
     ImageIO.write(image, format, file)
 }
-fun maxPool2D(
-    data: Array<IntArray>,
-    poolSize: Int = 2,
-    stride: Int = 2
-): Array<IntArray> {
 
+fun maxPool2D(data: Array<IntArray>, poolSize: Int = 2, stride: Int = 2): Array<IntArray> {
     val height = data.size
     val width = data[0].size
 
@@ -90,83 +80,100 @@ fun maxPool2D(
     return Array(outH) { y ->
         IntArray(outW) { x ->
             var max = Int.MIN_VALUE
-
             for (dy in 0 until poolSize) {
                 for (dx in 0 until poolSize) {
                     val v = data[y * stride + dy][x * stride + dx]
                     if (v > max) max = v
                 }
             }
-
             max
         }
     }
 }
 
-
 fun main() {
-    val img: BufferedImage = ImageIO.read(File("res/img4.jpg"))
+    val img: BufferedImage = ImageIO.read(File("resupscale/img4.jpg"))
     var data = listOf(img)
-    var icc=1
-    val basepath = "res/img"
-    for(i in 1..3){
-        val path= basepath+(i).toString()+".png"
+    var icc = 1
+    val basepath = "resupscale/img"
+    for (i in 1..3) {
+        val path = basepath + i.toString() + ".png"
         val imgr: BufferedImage = ImageIO.read(File(path))
-        data=data+imgr
+        data = data + imgr
     }
-    data=data.shuffled()
-    var edge=30
-    val kernel=3
-    var imc=12
-    val alpha = 0.2
-    val theta = 255
-    var resolution= listOf(data[0].width, data[0].height)
-    var fAvg=Array(resolution[0]){DoubleArray(resolution[1])}
-    for(i in data){
-        resolution= listOf(i.width, i.height)
-        var FSum= Array(resolution[0]){IntArray(resolution[1])}
-        for(y in 0 until i.height){
-            for(x in 0 until i.width){
+
+    val edge = 30
+    val kernelSize = 3
+    var imc = 0
+    val alpha = 0.05
+    val theta = 180
+
+    var fAvg: Array<DoubleArray>? = null
+
+    for (i in data) {
+        val height = i.height
+        val width = i.width
+
+        val FSum = Array(height) { IntArray(width) }
+        for (y in 0 until height) {
+            for (x in 0 until width) {
                 val rgb = i.getRGB(x, y)
                 val r = (rgb ushr 16) and 0xFF
                 val g = (rgb ushr 8) and 0xFF
                 val b = rgb and 0xFF
-                FSum[x][y] = r+g+b
+                FSum[y][x] = r + g + b
             }
         }
-        edge=(i.height+i.width)/30
-        val FCrop=cropMatrix(FSum, edge)
-        val newres = listOf(i.width,i.height)
+
+        val e = minOf(edge, (height - 1) / 2, (width - 1) / 2).coerceAtLeast(0)
+        val FCrop = if (e > 0) cropMatrix(FSum, e) else FSum
+
         val fPool = maxPool2D(FCrop, 2)
-        val kernel = gaussianKernel(size=5, sigma=1.0)
-        val Fgaussian =convolve2D(fPool, kernel)
+        val gKernel = gaussianKernel(size = kernelSize, sigma = 1.0)
+        val Fgaussian = convolve2D(fPool, gKernel)
+
+        if (fAvg == null || fAvg!!.size != Fgaussian.size || fAvg!![0].size != Fgaussian[0].size) {
+            fAvg = Array(Fgaussian.size) { DoubleArray(Fgaussian[0].size) { 0.0 } }
+        }
+
         if(imc<=0){
-            for(a in 0..newres[1]){
-                for(b in 0..newres[0]){
-                    if((fAvg[a][b]*4.0<Fgaussian[a][b]) and (fPool[a][b] > theta)){
-                        saveImage(i, "hit"+icc)
+            val h2 = Fgaussian.size
+            val w2 = Fgaussian[0].size
+            var hit = false
+            val maxPool = fPool.maxOf { it.maxOrNull() ?: 0 }
+            val maxG = Fgaussian.maxOf { it.maxOrNull() ?: 0.0 }
+            val maxAvg = fAvg!!.maxOf { it.maxOrNull() ?: 0.0 }
+            println("imc=$imc maxPool=$maxPool maxG=$maxG maxAvg=$maxAvg")
+            var sum = 0.0
+            var sum2 = 0.0
+            var n = 0
+            for (row in fPool) for (v in row) {
+                val dv = v.toDouble()
+                sum += dv
+                sum2 += dv * dv
+                n++
+            }
+            for (y in 0 until h2) {
+                for (x in 0 until w2) {
+                    if (fPool[y][x] > 4.0 * fAvg!![y][x] && fPool[y][x] > theta) {
+                        saveImage(i, "hit$icc.png")
+                        icc++
+                        hit = true
+                        break
                     }
                 }
-
+                if (hit) break
             }
-        }
-        else imc-=1
-        val size=fAvg.size
-        if(!fAvg.any {row->row.any{it!=0.0}}){
-            fAvg=Fgaussian
+        } else {
+            imc -= 1
         }
 
-        else{
-            for(ia in 0..minOf(fAvg.size,Fgaussian.size)-1){
-                for(j in 0..minOf(fAvg[0].size, Fgaussian[0].size)-1){
-                    val favgc=(alpha-1)*fAvg[ia][j]+alpha*Fgaussian[ia][j]
-                    fAvg[ia][j]=(alpha-1)*fAvg[ia][j]+alpha*Fgaussian[ia][j]
-                }
+        val h2 = minOf(fAvg!!.size, Fgaussian.size)
+        val w2 = minOf(fAvg!![0].size, Fgaussian[0].size)
+        for (y in 0 until h2) {
+            for (x in 0 until w2) {
+                fAvg!![y][x] = (1 - alpha) * fAvg!![y][x] + alpha * Fgaussian[y][x]
             }
-
-
-
-
+        }
     }
-}
 }
