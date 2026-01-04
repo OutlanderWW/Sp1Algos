@@ -2,21 +2,22 @@ import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
 
-/*fun saveImage(image: BufferedImage, fileName: String, format: String = "png") {
+fun saveImage(image: BufferedImage, fileName: String, format: String = "png") {
     val folder = File("hits/")
     if (!folder.exists()) folder.mkdirs()
 
     val file = File(folder, fileName)
     ImageIO.write(image, format, file)
-}*/
+}
 fun main() {
-    val img: BufferedImage = ImageIO.read(File("res/img4.jpg"))
-    var data = listOf(img)
+    var data: MutableMap<String, BufferedImage> = mutableMapOf()
+    var icc=1
     val basepath = "res/img"
-    for(i in 1..3){
+    for(i in 1..4){
         val path= basepath+i.toString()+".png"
+        val key = "img"+i+".png"
         val imgr: BufferedImage = ImageIO.read(File(path))
-        data=data+imgr
+        data[key]=imgr
     }
     val zSize = 5
     var threshold = 0.0
@@ -25,7 +26,9 @@ fun main() {
     var heatMap: Array<DoubleArray>? = null
     var pixScores: Array<DoubleArray>? = null
 
-    for (i in data) {
+    for (entry in data) {
+        val i = entry.value
+        val name= entry.key
         val height = i.height
         val width = i.width
 
@@ -104,7 +107,7 @@ fun main() {
         for (by in 0 until tMapH) {
             for (bx in 0 until tMapW) {
                 if (blockScores[by][bx] > 2 * threshold) {
-                    saveImage(i, "hit$icc.png")
+                    saveImage(i, name)
                     icc++
                     breaker=true
                     break
