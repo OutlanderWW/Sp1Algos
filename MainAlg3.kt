@@ -92,14 +92,14 @@ fun maxPool2D(data: Array<IntArray>, poolSize: Int = 2, stride: Int = 2): Array<
 }
 
 fun main() {
-    val img: BufferedImage = ImageIO.read(File("resupscale/img4.jpg"))
-    var data = listOf(img)
-    var icc = 1
-    val basepath = "resupscale/img"
-    for (i in 1..3) {
-        val path = basepath + i.toString() + ".png"
+    var data: MutableMap<String, BufferedImage> = mutableMapOf()
+    var icc=1
+    val basepath = "res/img"
+    for(i in 1..4){
+        val path= basepath+i.toString()+".png"
+        val key = "img"+i+".png"
         val imgr: BufferedImage = ImageIO.read(File(path))
-        data = data + imgr
+        data[key]=imgr
     }
 
     val edge = 30
@@ -110,7 +110,9 @@ fun main() {
 
     var fAvg: Array<DoubleArray>? = null
 
-    for (i in data) {
+    for (entry in data) {
+        val i = entry.value
+        val name= entry.key
         val height = i.height
         val width = i.width
 
@@ -156,7 +158,7 @@ fun main() {
             for (y in 0 until h2) {
                 for (x in 0 until w2) {
                     if (fPool[y][x] > 4.0 * fAvg!![y][x] && fPool[y][x] > theta) {
-                        saveImage(i, "hit$icc.png")
+                        saveImage(i, "name")
                         icc++
                         hit = true
                         break
