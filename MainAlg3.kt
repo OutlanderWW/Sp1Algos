@@ -158,7 +158,7 @@ fun main() {
             for (y in 0 until h2) {
                 for (x in 0 until w2) {
                     if (fPool[y][x] > 4.0 * fAvg!![y][x] && fPool[y][x] > theta) {
-                        saveImage(i, "name")
+                        saveImage(i, name)
                         icc++
                         hit = true
                         break
