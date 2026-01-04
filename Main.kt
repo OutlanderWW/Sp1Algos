@@ -16,7 +16,7 @@ fun main() {
     var data: MutableMap<String, BufferedImage> = mutableMapOf()
     var icc=1
     val basepath = "res/img"
-    for(i in 1..3){
+    for(i in 1..4){
         val path= basepath+i.toString()+".png"
         val key = "img"+i+".png"
         val imgr: BufferedImage = ImageIO.read(File(path))
