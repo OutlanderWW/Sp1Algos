@@ -63,7 +63,7 @@ fun cropMatrix(
 }
 
 fun saveImage(image: BufferedImage, fileName: String, format: String = "png") {
-    val folder = File("hits/")
+    val folder = File("hits_Alg3/")
     if (!folder.exists()) folder.mkdirs()
 
     val file = File(folder, fileName)
@@ -95,7 +95,7 @@ fun main() {
     var data: MutableMap<String, BufferedImage> = mutableMapOf()
     var icc=1
     val basepath = "res/img"
-    for(i in 1..4){
+    for(i in 1..216){
         val path= basepath+i.toString()+".png"
         val key = "img"+i+".png"
         val imgr: BufferedImage = ImageIO.read(File(path))
@@ -106,13 +106,12 @@ fun main() {
     val kernelSize = 3
     var imc = 0
     val alpha = 0.05
-    val theta = 180
 
     var fAvg: Array<DoubleArray>? = null
 
     for (entry in data) {
         val i = entry.value
-        val name= entry.key
+        val name = entry.key
         val height = i.height
         val width = i.width
 
@@ -138,17 +137,14 @@ fun main() {
             fAvg = Array(Fgaussian.size) { DoubleArray(Fgaussian[0].size) { 0.0 } }
         }
 
-        if(imc<=0){
+        var hit = false
+        if (imc <= 0) {
             val h2 = Fgaussian.size
             val w2 = Fgaussian[0].size
-            var hit = false
-            val maxPool = fPool.maxOf { it.maxOrNull() ?: 0 }
-            val maxG = Fgaussian.maxOf { it.maxOrNull() ?: 0.0 }
-            val maxAvg = fAvg!!.maxOf { it.maxOrNull() ?: 0.0 }
-            println("imc=$imc maxPool=$maxPool maxG=$maxG maxAvg=$maxAvg")
             var sum = 0.0
             var sum2 = 0.0
             var n = 0
+            val theta = 120.0
             for (row in fPool) for (v in row) {
                 val dv = v.toDouble()
                 sum += dv
@@ -157,7 +153,7 @@ fun main() {
             }
             for (y in 0 until h2) {
                 for (x in 0 until w2) {
-                    if (fPool[y][x] > 4.0 * fAvg!![y][x] && fPool[y][x] > theta) {
+                    if (fAvg!![y][x] * 4.0 < Fgaussian[y][x] && fPool[y][x] > theta) {
                         saveImage(i, name)
                         icc++
                         hit = true
@@ -169,12 +165,17 @@ fun main() {
         } else {
             imc -= 1
         }
-
         val h2 = minOf(fAvg!!.size, Fgaussian.size)
         val w2 = minOf(fAvg!![0].size, Fgaussian[0].size)
+        val k = 1.5
+        val eps = 5.0
         for (y in 0 until h2) {
             for (x in 0 until w2) {
-                fAvg!![y][x] = (1 - alpha) * fAvg!![y][x] + alpha * Fgaussian[y][x]
+                val a = fAvg!![y][x]
+                val g = Fgaussian[y][x]
+                if (g <= k * a + eps) {
+                    fAvg!![y][x] = (1 - alpha) * a + alpha * g
+                }
             }
         }
     }

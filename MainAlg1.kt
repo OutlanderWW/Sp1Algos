@@ -1,29 +1,27 @@
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 import java.io.File
-
+/*
 fun saveImage(image: BufferedImage, fileName: String, format: String = "png") {
-    val folder = File("hits/")
+    val folder = File("hits_Alg1/")
     if (!folder.exists()) folder.mkdirs()
 
     val file = File(folder, fileName)
     ImageIO.write(image, format, file)
 }
-
+*/
 fun main() {
     var data: MutableMap<String, BufferedImage> = mutableMapOf()
     var icc=1
     val basepath = "res/img"
-    for(i in 1..4){
+    for(i in 1..216){
         val path= basepath+i.toString()+".png"
         val key = "img"+i+".png"
         val imgr: BufferedImage = ImageIO.read(File(path))
         data[key]=imgr
     }
     // values can be changed but these are suggested within the article
-    val beta = 120
+    val beta = 80
     val gamma = 80
     val delta = 0.04F
 
@@ -57,11 +55,10 @@ fun main() {
         val pc: Float=resolution[0].toFloat()*resolution[1].toFloat()
         val avgFSum: Float = (FSumSum /pc)
         val blackFSum:Float = (FZeroesCount/pc)
-        val avgsumVar=avgFSum<gamma
+        val avgSumVar=avgFSum<gamma
         val maxVar=maxFsum>beta
         val blackVar =blackFSum>delta
-        println("max=$maxFsum avg=$avgFSum black=$blackFSum")
-        if(maxVar and avgsumVar){
+        if(maxVar and avgSumVar){
             saveImage(i, name)
             icc+=1
         }
